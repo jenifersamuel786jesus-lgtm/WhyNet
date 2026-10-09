@@ -1,14 +1,14 @@
 # WhyNet Live
 
-**Cross-layer network fault diagnosis and intelligent troubleshooting dashboard.** A beginner-friendly Flask/SQLite academic project with bounded TCP/DNS diagnostics, a responsive live dashboard, transparent evidence-based rules, test history, and API endpoints.
+**Cross-layer network fault diagnosis and intelligent troubleshooting dashboard.** A beginner-friendly Flask/SQLite academic project with a browser-side device-link indicator, bounded server-side TCP/DNS diagnostics, transparent evidence-based rules, test history, and API endpoints.
 
-> **Scope note:** checks run from the machine hosting this app. A public deployment measures the hosting provider's outbound network—not the browser visitor's Wi-Fi, laptop, or ISP. TCP timing is not ICMP ping, and failed probes are not proof of a universal outage or exact root cause.
+> **Scope note:** the **Device link** card uses the browser's `navigator.onLine` signal and online/offline events; it can show the browser going offline while this page is open. Browser signals are an approximation and do not guarantee internet reachability. DNS, TCP, and full-suite tests run from the machine hosting this app; on a public deployment they measure the hosting provider's network, not the visitor's Wi-Fi, laptop, or ISP. TCP timing is not ICMP ping, and failed probes are not proof of a universal outage or exact root cause.
 
 ## Architecture
 
 ```text
 Browser dashboard (HTML/CSS/JS, Bootstrap, Chart.js)
-          │ JSON over same-origin HTTP; 15s status polling
+          │ browser online/offline events + JSON over same-origin HTTP; 15s status polling
           ▼
 Flask API (validation, bounded diagnostic suite)
    ├── diagnostics/checks.py (DNS, connectivity, TCP timing)
@@ -77,11 +77,12 @@ Tests use mocks for network-dependent paths. They cover validation, TCP success/
 
 ## Demonstration
 
-1. Load the dashboard and select **Run full suite**. The suite performs one fixed IP TCP reachability check, a DNS lookup, a TCP connect to `example.com:443`, and four bounded TCP timing attempts.
-2. Inspect the green/amber/red cards and the diagnosis panel. Findings state evidence strength and list plausible causes/recommendations; they do not claim proof of a root cause.
-3. View recent checks in the history table. Records persist in SQLite for the current database volume.
-4. Use **Test connectivity**, **Test DNS**, or **Test TCP** for individual actions. TCP API callers can specify their own authorized hostname and single port.
-5. Toggle monitoring pause/resume. While active, the browser refreshes the status and history every 15 seconds.
+1. Keep the dashboard open and turn off the device's Wi-Fi/network. The **Device link** card and offline notice use the browser's online/offline event and should change while the already-loaded page remains open. Reconnect to see the status restore.
+2. Load the dashboard and select **Run full suite**. The suite performs one fixed IP TCP reachability check from the application host, a DNS lookup, a TCP connect to `example.com:443`, and four bounded TCP timing attempts.
+3. Inspect the green/amber/red cards and the diagnosis panel. The **Device link** is a browser-reported signal; server diagnostic findings state evidence strength and plausible causes but do not prove root cause.
+4. View recent checks in the history table. Records persist in SQLite for the current database volume.
+5. Use **Test connectivity**, **Test DNS**, or **Test TCP** for individual actions. TCP API callers can specify their own authorized hostname and single port.
+6. Toggle monitoring pause/resume. While active and online, the browser refreshes server status/history every 15 seconds; when the browser reports offline it skips API polling and refreshes on reconnect.
 
 ## API
 
@@ -128,7 +129,8 @@ This is a Python Flask app, so deploy as a Python web service (for example Rende
 
 ## Limitations and security
 
-- This checks the app server's egress only; browsers cannot use server-side socket calls to diagnose their own LAN.
+- The browser's `navigator.onLine` signal is approximate: `ONLINE` means the browser reports a network link, not that the internet or this particular app is reachable. The browser may not report `OFFLINE` when Wi-Fi remains connected to a router that has lost upstream service.
+- DNS/TCP diagnostics check the app server's egress; they cannot use server-side sockets to diagnose the visitor's LAN or ISP.
 - TCP handshake duration is an application-level approximation and depends on remote service health, DNS, firewall, geography, and load. ICMP may be blocked or deprioritized, so no ping-based claims are made.
 - A small set of attempts is a sample, not a statistically robust packet-loss estimate. Its metric is labeled **failed attempts**, not ICMP packet loss.
 - DNS is subject to the host operating system's resolver behavior. Target input is validated, but public deployment operators should add authentication/rate limiting before exposing diagnostic APIs broadly.

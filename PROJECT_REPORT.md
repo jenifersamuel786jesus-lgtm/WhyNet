@@ -2,7 +2,7 @@
 
 ## Abstract
 
-WhyNet Live is a web-based network troubleshooting demonstration that collects bounded connectivity, DNS, TCP reachability, and TCP handshake timing measurements from the host running the application. A Flask API validates requests, stores test results and inferred incidents in SQLite, and exposes JSON endpoints to a responsive browser dashboard. A transparent rule-based engine turns collected measurements into findings with evidence strength and recommendations. Checks use explicit timeouts and avoid arbitrary shell execution and port-range scanning. The system is intended for learning and controlled demonstrations; results describe the application host's network path, not a visitor's private device. A finding is not proof of a particular root cause.
+WhyNet Live is a web-based network troubleshooting demonstration that reports a browser-side device-link signal and collects bounded connectivity, DNS, TCP reachability, and TCP handshake timing measurements from the host running the application. The page listens for browser online/offline events while open; a Flask API validates requests, stores server-side test results and inferred incidents in SQLite, and exposes JSON endpoints to a responsive dashboard. A transparent rule-based engine turns server measurements into findings with evidence strength and recommendations. Checks use explicit timeouts and avoid arbitrary shell execution and port-range scanning. Browser link state is an approximation, while server diagnostics describe the application host's network path, not a visitor's private-device route. A finding is not proof of a particular root cause.
 
 ## 1. Introduction and problem statement
 
@@ -10,7 +10,8 @@ Connectivity faults span multiple layers. Users often see a service fail but can
 
 ## 2. Objectives and scope
 
-- Measure a fixed outbound TCP connectivity target.
+- Display the browser's reported device-link state using `navigator.onLine` and online/offline events.
+- Measure a fixed outbound TCP connectivity target from the application host.
 - Resolve a configurable hostname and time a single TCP connection.
 - Calculate average/min/max successful TCP handshake duration and failed-attempt ratio.
 - Save observations and rule-based incidents in SQLite.
@@ -31,7 +32,7 @@ Out of scope: LAN discovery, arbitrary port scanning, packet capture, ICMP-based
 ### Functional
 
 1. Provide health/status, individual test, full-suite, history, and incident APIs.
-2. Show internet/DNS/TCP/latency/failed-attempt indicators, trend chart, and recent results.
+2. Show a browser-reported device-link indicator separately from server connectivity/DNS/TCP/latency/failed-attempt indicators, trend chart, and recent results.
 3. Distinguish failed or unavailable values from numeric zero.
 4. Identify DNS, connectivity, TCP, high-latency, possible failed attempts, intermittent behavior, and insufficient-evidence conditions where input supports them.
 5. Persist result metadata and incident evidence.
@@ -151,7 +152,7 @@ Follow `README.md` for Windows PowerShell and Linux/macOS commands. Demonstratio
 
 ## 12. Limitations and future enhancements
 
-The server's network path is not the visitor's; TCP timing is not ICMP; a handful of attempts is not a robust statistical estimate; DNS resolution depends on OS resolver behavior; public diagnostic endpoints need abuse protection; SQLite local files may be ephemeral or unsuitable for multiple workers; thresholds need environment-specific tuning. Future work could add authenticated user-side agent measurements, a managed database, longer-term time-series aggregation, carefully controlled target allowlists, calibrated confidence, and optional SSE.
+The browser's `navigator.onLine` reports a coarse network-link signal: an offline event should fire when the browser detects disconnection, but an online signal does not prove internet access, and Wi-Fi loss of upstream service may go undetected. The server's network path is not the visitor's; TCP timing is not ICMP; a handful of attempts is not a robust statistical estimate; DNS resolution depends on OS resolver behavior; public diagnostic endpoints need abuse protection; SQLite local files may be ephemeral or unsuitable for multiple workers; thresholds need environment-specific tuning. Future work could add authenticated user-side agent measurements, a managed database, longer-term time-series aggregation, carefully controlled target allowlists, calibrated confidence, and optional SSE.
 
 ## 13. Conclusion
 
